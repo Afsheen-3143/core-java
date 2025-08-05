@@ -1,0 +1,140 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+
+class Movie {
+    int id;
+    String title;
+    int totalSeats;
+    int bookedSeats = 0;
+
+    Movie(int id, String title, int totalSeats) {
+        this.id = id;
+        this.title = title;
+        this.totalSeats = totalSeats;
+    }
+
+    int availableSeats() {
+        return totalSeats - bookedSeats;
+    }
+
+    void bookSeats(int count) {
+        bookedSeats += count;
+    }
+
+    void cancelSeats(int count) {
+        bookedSeats -= count;
+    }
+
+    public String toString() {
+        return id + ". " + title + " | Available: " + availableSeats();
+    }
+}
+
+class Booking {
+    int bookingId;
+    int seatsBooked;
+    Movie movie;
+
+    Booking(int bookingId, int seatsBooked, Movie movie) {
+        this.bookingId = bookingId;
+        this.seatsBooked = seatsBooked;
+        this.movie = movie;
+    }
+
+    String getReceipt() {
+        return "Booking ID: " + bookingId + "\nMovie: " + movie.title +
+                "\nSeats: " + seatsBooked + "\nAmount: ₹" + (seatsBooked * 150);
+    }
+}
+
+public class MovieBooking {
+    private JFrame frame;
+    private JComboBox<String> movieDropdown;
+    private JTextField seatInput;
+    private JTextArea outputArea;
+
+    private List<Movie> movies = new ArrayList<>();
+    private List<Booking> bookings = new ArrayList<>();
+    private int bookingCounter = 1;
+
+    public MovieBooking() {
+        // Add some movies
+        movies.add(new Movie(1, "Jawan", 50));
+        movies.add(new Movie(2, "RRR", 40));
+        movies.add(new Movie(3, "Bahubali", 30));
+
+        // Setup GUI
+        frame = new JFrame("🎬 Movie Ticket Booking");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(500, 400);
+        frame.setLayout(new BorderLayout());
+
+        // Dropdown for movie selection
+        movieDropdown = new JComboBox<>();
+        updateDropdown();
+
+        seatInput = new JTextField(5);
+
+        JButton bookButton = new JButton("Book Ticket");
+        bookButton.addActionListener(e -> bookTicket());
+
+        outputArea = new JTextArea(10, 40);
+        outputArea.setEditable(false);
+
+        JPanel topPanel = new JPanel();
+        topPanel.add(new JLabel("Select Movie:"));
+        topPanel.add(movieDropdown);
+        topPanel.add(new JLabel("Seats:"));
+        topPanel.add(seatInput);
+        topPanel.add(bookButton);
+
+        frame.add(topPanel, BorderLayout.NORTH);
+        frame.add(new JScrollPane(outputArea), BorderLayout.CENTER);
+        frame.setVisible(true);
+    }
+
+    private void updateDropdown() {
+        movieDropdown.removeAllItems();
+        for (Movie movie : movies) {
+            movieDropdown.addItem(movie.toString());
+        }
+    }
+
+    private void bookTicket() {
+        int selectedIndex = movieDropdown.getSelectedIndex();
+        if (selectedIndex == -1) {
+            outputArea.setText("❌ Please select a movie.");
+            return;
+        }
+
+        Movie selectedMovie = movies.get(selectedIndex);
+
+        int seats;
+        try {
+            seats = Integer.parseInt(seatInput.getText());
+            if (seats <= 0) throw new NumberFormatException();
+        } catch (NumberFormatException e) {
+            outputArea.setText("❌ Enter a valid number of seats.");
+            return;
+        }
+
+        if (seats > selectedMovie.availableSeats()) {
+            outputArea.setText("❌ Not enough seats available.");
+            return;
+        }
+
+        selectedMovie.bookSeats(seats);
+        Booking booking = new Booking(bookingCounter++, seats, selectedMovie);
+        bookings.add(booking);
+
+        outputArea.setText("✅ Booking Confirmed!\n\n" + booking.getReceipt());
+        updateDropdown();
+        seatInput.setText("");
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> new MovieBookingGUI());
+    }
+}
